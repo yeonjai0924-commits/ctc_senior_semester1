@@ -1,83 +1,38 @@
 <!DOCTYPE html>
-
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>
-        Week 2 — Interactive Noise
-    </title>
+    <title>Week 2 — Interactive Noise</title>
 
     <style>
-
         html,
         body {
-
             margin: 0;
-
             width: 100%;
             height: 100%;
-
             overflow: hidden;
-
             background: black;
         }
 
-
         canvas {
-
+            display: block;
             width: 100%;
             height: 100%;
-
-            display: block;
-
             cursor: crosshair;
         }
-
-
-        .instructions {
-
-            position: fixed;
-
-            left: 20px;
-            bottom: 20px;
-
-            color: white;
-
-            font-family: Arial, sans-serif;
-            font-size: 13px;
-            line-height: 1.5;
-
-            mix-blend-mode: difference;
-
-            pointer-events: none;
-        }
-
     </style>
-
 </head>
 
 
 <body>
 
-
 <canvas id="canvas"></canvas>
 
 
-<div class="instructions">
-
-    move — push field<br>
-    move fast — increase turbulence<br>
-    drag — pull + swirl<br>
-    click — create ripple
-
-</div>
-
-
 <script>
-
 
 const canvas =
     document.getElementById("canvas");
@@ -87,6 +42,9 @@ const gl =
     canvas.getContext("webgl");
 
 
+// ------------------------------------
+// VERTEX SHADER
+// ------------------------------------
 
 const vertexShaderSource = `
 
@@ -105,6 +63,9 @@ void main() {
 `;
 
 
+// ------------------------------------
+// CREATE SHADER
+// ------------------------------------
 
 function createShader(type, source) {
 
@@ -118,7 +79,6 @@ function createShader(type, source) {
 
     gl.compileShader(shader);
 
-
     if (
         !gl.getShaderParameter(
             shader,
@@ -131,11 +91,13 @@ function createShader(type, source) {
         );
     }
 
-
     return shader;
 }
 
 
+// ------------------------------------
+// LOAD FRAGMENT SHADER
+// ------------------------------------
 
 fetch("shader.frag")
 
@@ -181,10 +143,9 @@ fetch("shader.frag")
     gl.useProgram(program);
 
 
-
-    // --------------------------------
-    // SCREEN RECTANGLE
-    // --------------------------------
+    // ------------------------------------
+    // FULL SCREEN RECTANGLE
+    // ------------------------------------
 
     const vertices =
         new Float32Array([
@@ -239,10 +200,9 @@ fetch("shader.frag")
     );
 
 
-
-    // --------------------------------
+    // ------------------------------------
     // UNIFORMS
-    // --------------------------------
+    // ------------------------------------
 
     const timeLocation =
         gl.getUniformLocation(
@@ -293,155 +253,236 @@ fetch("shader.frag")
         );
 
 
-
-    // --------------------------------
+    // ------------------------------------
     // INPUT STATE
-    // --------------------------------
+    // ------------------------------------
 
     let mouseX =
         window.innerWidth / 2;
+
 
     let mouseY =
         window.innerHeight / 2;
 
 
-    let previousMouseX =
-        mouseX;
-
-    let previousMouseY =
-        mouseY;
+    let velocityX =
+        0;
 
 
-    let velocityX = 0;
-    let velocityY = 0;
+    let velocityY =
+        0;
 
 
-    let mouseDown = 0;
+    let mouseDown =
+        0;
 
 
     let clickX =
         mouseX;
 
+
     let clickY =
         mouseY;
 
 
-    let clickTime = -100;
+    let clickTime =
+        -100;
 
 
+    // ------------------------------------
+    // RESIZE
+    // ------------------------------------
 
-    // --------------------------------
-    // MOUSE MOVE
-    // --------------------------------
+    function resize() {
 
-    canvas.addEventListener(
-        "mousemove",
-        event => {
-
-            const rect =
-                canvas.getBoundingClientRect();
+        const dpr =
+            Math.min(
+                window.devicePixelRatio || 1,
+                2
+            );
 
 
-            const newX =
+        const width =
+            Math.floor(
+                window.innerWidth *
+                dpr
+            );
+
+
+        const height =
+            Math.floor(
+                window.innerHeight *
+                dpr
+            );
+
+
+        if (
+            canvas.width !== width ||
+            canvas.height !== height
+        ) {
+
+            canvas.width =
+                width;
+
+
+            canvas.height =
+                height;
+
+
+            gl.viewport(
+                0,
+                0,
+                width,
+                height
+            );
+        }
+    }
+
+
+    resize();
+
+
+    // ------------------------------------
+    // POINTER POSITION
+    // ------------------------------------
+
+    function getPointerPosition(event) {
+
+        const rect =
+            canvas.getBoundingClientRect();
+
+
+        return {
+
+            x:
                 (event.clientX - rect.left)
                 *
-                (canvas.width / rect.width);
+                (canvas.width / rect.width),
 
-
-            const newY =
+            y:
                 (rect.bottom - event.clientY)
                 *
-                (canvas.height / rect.height);
+                (canvas.height / rect.height)
+
+        };
+    }
+
+
+    // ------------------------------------
+    // POINTER MOVE
+    // ------------------------------------
+
+    canvas.addEventListener(
+        "pointermove",
+        event => {
+
+            const position =
+                getPointerPosition(event);
 
 
             velocityX =
-                newX -
-                previousMouseX;
+                position.x -
+                mouseX;
 
 
             velocityY =
-                newY -
-                previousMouseY;
-
-
-            previousMouseX =
-                newX;
-
-
-            previousMouseY =
-                newY;
+                position.y -
+                mouseY;
 
 
             mouseX =
-                newX;
+                position.x;
 
 
             mouseY =
-                newY;
+                position.y;
         }
     );
 
 
-
-    // --------------------------------
-    // CLICK / DRAG
-    // --------------------------------
+    // ------------------------------------
+    // POINTER DOWN
+    // ------------------------------------
 
     canvas.addEventListener(
-        "mousedown",
-        () => {
+        "pointerdown",
+        event => {
 
-            mouseDown = 1;
+            const position =
+                getPointerPosition(event);
+
+
+            mouseX =
+                position.x;
+
+
+            mouseY =
+                position.y;
+
 
             clickX =
                 mouseX;
 
+
             clickY =
                 mouseY;
+
 
             clickTime =
                 performance.now() /
                 1000;
+
+
+            mouseDown =
+                1;
+
+
+            canvas.setPointerCapture(
+                event.pointerId
+            );
         }
     );
 
 
-    window.addEventListener(
-        "mouseup",
+    // ------------------------------------
+    // POINTER UP
+    // ------------------------------------
+
+    canvas.addEventListener(
+        "pointerup",
+        event => {
+
+            mouseDown =
+                0;
+
+
+            if (
+                canvas.hasPointerCapture(
+                    event.pointerId
+                )
+            ) {
+
+                canvas.releasePointerCapture(
+                    event.pointerId
+                );
+            }
+        }
+    );
+
+
+    canvas.addEventListener(
+        "pointercancel",
         () => {
 
-            mouseDown = 0;
+            mouseDown =
+                0;
         }
     );
 
 
-
-    // --------------------------------
-    // RESIZE
-    // --------------------------------
-
-    function resize() {
-
-        canvas.width =
-            window.innerWidth;
-
-        canvas.height =
-            window.innerHeight;
-
-
-        gl.viewport(
-            0,
-            0,
-            canvas.width,
-            canvas.height
-        );
-    }
-
-
-
-    // --------------------------------
+    // ------------------------------------
     // RENDER
-    // --------------------------------
+    // ------------------------------------
 
     function render(ms) {
 
@@ -449,7 +490,8 @@ fetch("shader.frag")
 
 
         const time =
-            ms / 1000;
+            ms /
+            1000;
 
 
         gl.uniform1f(
@@ -505,9 +547,12 @@ fetch("shader.frag")
         );
 
 
-        // velocity slowly fades
-        velocityX *= 0.85;
-        velocityY *= 0.85;
+        velocityX *=
+            0.88;
+
+
+        velocityY *=
+            0.88;
 
 
         requestAnimationFrame(
@@ -516,10 +561,11 @@ fetch("shader.frag")
     }
 
 
-    requestAnimationFrame(render);
+    requestAnimationFrame(
+        render
+    );
 
 });
-
 
 </script>
 
