@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>
+        Week 2 — Interactive Noise
+    </title>
+
+    <style>
+
+        html,
+        body {
+
+            margin: 0;
+
+            width: 100%;
+            height: 100%;
+
+            overflow: hidden;
+
+            background: black;
+        }
+
+
+        canvas {
+
+            width: 100%;
+            height: 100%;
+
+            display: block;
+
+            cursor: crosshair;
+        }
+
+
+        .instructions {
+
+            position: fixed;
+
+            left: 20px;
+            bottom: 20px;
+
+            color: white;
+
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            line-height: 1.5;
+
+            mix-blend-mode: difference;
+
+            pointer-events: none;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<canvas id="canvas"></canvas>
+
+
+<div class="instructions">
+
+    move — push field<br>
+    move fast — increase turbulence<br>
+    drag — pull + swirl<br>
+    click — create ripple
+
+</div>
+
+
+<script>
+
+
+const canvas =
+    document.getElementById("canvas");
+
+
+const gl =
+    canvas.getContext("webgl");
+
+
+
+const vertexShaderSource = `
+
+attribute vec2 a_position;
+
+void main() {
+
+    gl_Position =
+        vec4(
+            a_position,
+            0.0,
+            1.0
+        );
+}
+
+`;
+
+
+
+function createShader(type, source) {
+
+    const shader =
+        gl.createShader(type);
+
+    gl.shaderSource(
+        shader,
+        source
+    );
+
+    gl.compileShader(shader);
+
+
+    if (
+        !gl.getShaderParameter(
+            shader,
+            gl.COMPILE_STATUS
+        )
+    ) {
+
+        console.error(
+            gl.getShaderInfoLog(shader)
+        );
+    }
+
+
+    return shader;
+}
+
+
+
+fetch("shader.frag")
+
+.then(response =>
+    response.text()
+)
+
+.then(fragmentShaderSource => {
+
+
+    const vertexShader =
+        createShader(
+            gl.VERTEX_SHADER,
+            vertexShaderSource
+        );
+
+
+    const fragmentShader =
+        createShader(
+            gl.FRAGMENT_SHADER,
+            fragmentShaderSource
+        );
+
+
+    const program =
+        gl.createProgram();
+
+
+    gl.attachShader(
+        program,
+        vertexShader
+    );
+
+
+    gl.attachShader(
+        program,
+        fragmentShader
+    );
+
+
+    gl.linkProgram(program);
+
+    gl.useProgram(program);
+
+
+
+    // --------------------------------
+    // SCREEN RECTANGLE
+    // --------------------------------
+
+    const vertices =
+        new Float32Array([
+
+            -1, -1,
+             1, -1,
+            -1,  1,
+
+            -1,  1,
+             1, -1,
+             1,  1
+
+        ]);
+
+
+    const buffer =
+        gl.createBuffer();
+
+
+    gl.bindBuffer(
+        gl.ARRAY_BUFFER,
+        buffer
+    );
+
+
+    gl.bufferData(
+        gl.ARRAY_BUFFER,
+        vertices,
+        gl.STATIC_DRAW
+    );
+
+
+    const position =
+        gl.getAttribLocation(
+            program,
+            "a_position"
+        );
+
+
+    gl.enableVertexAttribArray(
+        position
+    );
+
+
+    gl.vertexAttribPointer(
+        position,
+        2,
+        gl.FLOAT,
+        false,
+        0,
+        0
+    );
+
+
+
+    // --------------------------------
+    // UNIFORMS
+    // --------------------------------
+
+    const timeLocation =
+        gl.getUniformLocation(
+            program,
+            "u_time"
+        );
+
+
+    const resolutionLocation =
+        gl.getUniformLocation(
+            program,
+            "u_resolution"
+        );
+
+
+    const mouseLocation =
+        gl.getUniformLocation(
+            program,
+            "u_mouse"
+        );
+
+
+    const velocityLocation =
+        gl.getUniformLocation(
+            program,
+            "u_mouseVelocity"
+        );
+
+
+    const mouseDownLocation =
+        gl.getUniformLocation(
+            program,
+            "u_mouseDown"
+        );
+
+
+    const clickLocation =
+        gl.getUniformLocation(
+            program,
+            "u_click"
+        );
+
+
+    const clickTimeLocation =
+        gl.getUniformLocation(
+            program,
+            "u_clickTime"
+        );
+
+
+
+    // --------------------------------
+    // INPUT STATE
+    // --------------------------------
+
+    let mouseX =
+        window.innerWidth / 2;
+
+    let mouseY =
+        window.innerHeight / 2;
+
+
+    let previousMouseX =
+        mouseX;
+
+    let previousMouseY =
+        mouseY;
+
+
+    let velocityX = 0;
+    let velocityY = 0;
+
+
+    let mouseDown = 0;
+
+
+    let clickX =
+        mouseX;
+
+    let clickY =
+        mouseY;
+
+
+    let clickTime = -100;
+
+
+
+    // --------------------------------
+    // MOUSE MOVE
+    // --------------------------------
+
+    canvas.addEventListener(
+        "mousemove",
+        event => {
+
+            const rect =
+                canvas.getBoundingClientRect();
+
+
+            const newX =
+                (event.clientX - rect.left)
+                *
+                (canvas.width / rect.width);
+
+
+            const newY =
+                (rect.bottom - event.clientY)
+                *
+                (canvas.height / rect.height);
+
+
+            velocityX =
+                newX -
+                previousMouseX;
+
+
+            velocityY =
+                newY -
+                previousMouseY;
+
+
+            previousMouseX =
+                newX;
+
+
+            previousMouseY =
+                newY;
+
+
+            mouseX =
+                newX;
+
+
+            mouseY =
+                newY;
+        }
+    );
+
+
+
+    // --------------------------------
+    // CLICK / DRAG
+    // --------------------------------
+
+    canvas.addEventListener(
+        "mousedown",
+        () => {
+
+            mouseDown = 1;
+
+            clickX =
+                mouseX;
+
+            clickY =
+                mouseY;
+
+            clickTime =
+                performance.now() /
+                1000;
+        }
+    );
+
+
+    window.addEventListener(
+        "mouseup",
+        () => {
+
+            mouseDown = 0;
+        }
+    );
+
+
+
+    // --------------------------------
+    // RESIZE
+    // --------------------------------
+
+    function resize() {
+
+        canvas.width =
+            window.innerWidth;
+
+        canvas.height =
+            window.innerHeight;
+
+
+        gl.viewport(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+    }
+
+
+
+    // --------------------------------
+    // RENDER
+    // --------------------------------
+
+    function render(ms) {
+
+        resize();
+
+
+        const time =
+            ms / 1000;
+
+
+        gl.uniform1f(
+            timeLocation,
+            time
+        );
+
+
+        gl.uniform2f(
+            resolutionLocation,
+            canvas.width,
+            canvas.height
+        );
+
+
+        gl.uniform2f(
+            mouseLocation,
+            mouseX,
+            mouseY
+        );
+
+
+        gl.uniform2f(
+            velocityLocation,
+            velocityX,
+            velocityY
+        );
+
+
+        gl.uniform1f(
+            mouseDownLocation,
+            mouseDown
+        );
+
+
+        gl.uniform2f(
+            clickLocation,
+            clickX,
+            clickY
+        );
+
+
+        gl.uniform1f(
+            clickTimeLocation,
+            clickTime
+        );
+
+
+        gl.drawArrays(
+            gl.TRIANGLES,
+            0,
+            6
+        );
+
+
+        // velocity slowly fades
+        velocityX *= 0.85;
+        velocityY *= 0.85;
+
+
+        requestAnimationFrame(
+            render
+        );
+    }
+
+
+    requestAnimationFrame(render);
+
+});
+
+
+</script>
+
+</body>
+
+</html>
