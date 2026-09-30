@@ -5,569 +5,71 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Week 2 — Interactive Noise</title>
+    <title>My Shader Projects</title>
 
     <style>
-        html,
         body {
-            margin: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background: black;
+            font-family: Arial, sans-serif;
+            background-color: white;
+            color: black;
+            padding: 30px;
         }
 
-        canvas {
+        h1 {
+            font-size: 32px;
+        }
+
+        p {
+            font-size: 16px;
+        }
+
+        .week-list {
+            margin-top: 40px;
+        }
+
+        .week {
             display: block;
-            width: 100%;
-            height: 100%;
-            cursor: crosshair;
+            width: 300px;
+            margin-bottom: 15px;
+            padding: 15px;
+
+            background-color: #eeeeee;
+            border: 1px solid #999999;
+
+            color: black;
+            text-decoration: none;
+            font-size: 18px;
+        }
+
+        .week:hover {
+            background-color: #dddddd;
         }
     </style>
 </head>
 
-
 <body>
 
-<canvas id="canvas"></canvas>
+    <h1>My Shader Projects</h1>
 
+    <p>
+        Weekly coding experiments
+    </p>
 
-<script>
+    <div class="week-list">
 
-const canvas =
-    document.getElementById("canvas");
+        <a class="week" href="week1.html">
+            Week 1 - Fragment Shader
+        </a>
 
+        <a class="week" href="week2.html">
+            Week 2 - Noise and Mouse
+        </a>
 
-const gl =
-    canvas.getContext("webgl");
+        <a class="week" href="week3.html">
+            Week 3 - Webcam Pixels
+        </a>
 
-
-// ------------------------------------
-// VERTEX SHADER
-// ------------------------------------
-
-const vertexShaderSource = `
-
-attribute vec2 a_position;
-
-void main() {
-
-    gl_Position =
-        vec4(
-            a_position,
-            0.0,
-            1.0
-        );
-}
-
-`;
-
-
-// ------------------------------------
-// CREATE SHADER
-// ------------------------------------
-
-function createShader(type, source) {
-
-    const shader =
-        gl.createShader(type);
-
-    gl.shaderSource(
-        shader,
-        source
-    );
-
-    gl.compileShader(shader);
-
-    if (
-        !gl.getShaderParameter(
-            shader,
-            gl.COMPILE_STATUS
-        )
-    ) {
-
-        console.error(
-            gl.getShaderInfoLog(shader)
-        );
-    }
-
-    return shader;
-}
-
-
-// ------------------------------------
-// LOAD FRAGMENT SHADER
-// ------------------------------------
-
-fetch("shader.frag")
-
-.then(response =>
-    response.text()
-)
-
-.then(fragmentShaderSource => {
-
-
-    const vertexShader =
-        createShader(
-            gl.VERTEX_SHADER,
-            vertexShaderSource
-        );
-
-
-    const fragmentShader =
-        createShader(
-            gl.FRAGMENT_SHADER,
-            fragmentShaderSource
-        );
-
-
-    const program =
-        gl.createProgram();
-
-
-    gl.attachShader(
-        program,
-        vertexShader
-    );
-
-
-    gl.attachShader(
-        program,
-        fragmentShader
-    );
-
-
-    gl.linkProgram(program);
-
-    gl.useProgram(program);
-
-
-    // ------------------------------------
-    // FULL SCREEN RECTANGLE
-    // ------------------------------------
-
-    const vertices =
-        new Float32Array([
-
-            -1, -1,
-             1, -1,
-            -1,  1,
-
-            -1,  1,
-             1, -1,
-             1,  1
-
-        ]);
-
-
-    const buffer =
-        gl.createBuffer();
-
-
-    gl.bindBuffer(
-        gl.ARRAY_BUFFER,
-        buffer
-    );
-
-
-    gl.bufferData(
-        gl.ARRAY_BUFFER,
-        vertices,
-        gl.STATIC_DRAW
-    );
-
-
-    const position =
-        gl.getAttribLocation(
-            program,
-            "a_position"
-        );
-
-
-    gl.enableVertexAttribArray(
-        position
-    );
-
-
-    gl.vertexAttribPointer(
-        position,
-        2,
-        gl.FLOAT,
-        false,
-        0,
-        0
-    );
-
-
-    // ------------------------------------
-    // UNIFORMS
-    // ------------------------------------
-
-    const timeLocation =
-        gl.getUniformLocation(
-            program,
-            "u_time"
-        );
-
-
-    const resolutionLocation =
-        gl.getUniformLocation(
-            program,
-            "u_resolution"
-        );
-
-
-    const mouseLocation =
-        gl.getUniformLocation(
-            program,
-            "u_mouse"
-        );
-
-
-    const velocityLocation =
-        gl.getUniformLocation(
-            program,
-            "u_mouseVelocity"
-        );
-
-
-    const mouseDownLocation =
-        gl.getUniformLocation(
-            program,
-            "u_mouseDown"
-        );
-
-
-    const clickLocation =
-        gl.getUniformLocation(
-            program,
-            "u_click"
-        );
-
-
-    const clickTimeLocation =
-        gl.getUniformLocation(
-            program,
-            "u_clickTime"
-        );
-
-
-    // ------------------------------------
-    // INPUT STATE
-    // ------------------------------------
-
-    let mouseX =
-        window.innerWidth / 2;
-
-
-    let mouseY =
-        window.innerHeight / 2;
-
-
-    let velocityX =
-        0;
-
-
-    let velocityY =
-        0;
-
-
-    let mouseDown =
-        0;
-
-
-    let clickX =
-        mouseX;
-
-
-    let clickY =
-        mouseY;
-
-
-    let clickTime =
-        -100;
-
-
-    // ------------------------------------
-    // RESIZE
-    // ------------------------------------
-
-    function resize() {
-
-        const dpr =
-            Math.min(
-                window.devicePixelRatio || 1,
-                2
-            );
-
-
-        const width =
-            Math.floor(
-                window.innerWidth *
-                dpr
-            );
-
-
-        const height =
-            Math.floor(
-                window.innerHeight *
-                dpr
-            );
-
-
-        if (
-            canvas.width !== width ||
-            canvas.height !== height
-        ) {
-
-            canvas.width =
-                width;
-
-
-            canvas.height =
-                height;
-
-
-            gl.viewport(
-                0,
-                0,
-                width,
-                height
-            );
-        }
-    }
-
-
-    resize();
-
-
-    // ------------------------------------
-    // POINTER POSITION
-    // ------------------------------------
-
-    function getPointerPosition(event) {
-
-        const rect =
-            canvas.getBoundingClientRect();
-
-
-        return {
-
-            x:
-                (event.clientX - rect.left)
-                *
-                (canvas.width / rect.width),
-
-            y:
-                (rect.bottom - event.clientY)
-                *
-                (canvas.height / rect.height)
-
-        };
-    }
-
-
-    // ------------------------------------
-    // POINTER MOVE
-    // ------------------------------------
-
-    canvas.addEventListener(
-        "pointermove",
-        event => {
-
-            const position =
-                getPointerPosition(event);
-
-
-            velocityX =
-                position.x -
-                mouseX;
-
-
-            velocityY =
-                position.y -
-                mouseY;
-
-
-            mouseX =
-                position.x;
-
-
-            mouseY =
-                position.y;
-        }
-    );
-
-
-    // ------------------------------------
-    // POINTER DOWN
-    // ------------------------------------
-
-    canvas.addEventListener(
-        "pointerdown",
-        event => {
-
-            const position =
-                getPointerPosition(event);
-
-
-            mouseX =
-                position.x;
-
-
-            mouseY =
-                position.y;
-
-
-            clickX =
-                mouseX;
-
-
-            clickY =
-                mouseY;
-
-
-            clickTime =
-                performance.now() /
-                1000;
-
-
-            mouseDown =
-                1;
-
-
-            canvas.setPointerCapture(
-                event.pointerId
-            );
-        }
-    );
-
-
-    // ------------------------------------
-    // POINTER UP
-    // ------------------------------------
-
-    canvas.addEventListener(
-        "pointerup",
-        event => {
-
-            mouseDown =
-                0;
-
-
-            if (
-                canvas.hasPointerCapture(
-                    event.pointerId
-                )
-            ) {
-
-                canvas.releasePointerCapture(
-                    event.pointerId
-                );
-            }
-        }
-    );
-
-
-    canvas.addEventListener(
-        "pointercancel",
-        () => {
-
-            mouseDown =
-                0;
-        }
-    );
-
-
-    // ------------------------------------
-    // RENDER
-    // ------------------------------------
-
-    function render(ms) {
-
-        resize();
-
-
-        const time =
-            ms /
-            1000;
-
-
-        gl.uniform1f(
-            timeLocation,
-            time
-        );
-
-
-        gl.uniform2f(
-            resolutionLocation,
-            canvas.width,
-            canvas.height
-        );
-
-
-        gl.uniform2f(
-            mouseLocation,
-            mouseX,
-            mouseY
-        );
-
-
-        gl.uniform2f(
-            velocityLocation,
-            velocityX,
-            velocityY
-        );
-
-
-        gl.uniform1f(
-            mouseDownLocation,
-            mouseDown
-        );
-
-
-        gl.uniform2f(
-            clickLocation,
-            clickX,
-            clickY
-        );
-
-
-        gl.uniform1f(
-            clickTimeLocation,
-            clickTime
-        );
-
-
-        gl.drawArrays(
-            gl.TRIANGLES,
-            0,
-            6
-        );
-
-
-        velocityX *=
-            0.88;
-
-
-        velocityY *=
-            0.88;
-
-
-        requestAnimationFrame(
-            render
-        );
-    }
-
-
-    requestAnimationFrame(
-        render
-    );
-
-});
-
-</script>
+    </div>
 
 </body>
 
