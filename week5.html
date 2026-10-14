@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Worst Volume Slider</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            background: #f3f1eb;
+            color: #111;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            overflow: hidden;
+
+            cursor: crosshair;
+        }
+
+        .container {
+            width: min(900px, 85vw);
+        }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+
+            margin-bottom: 60px;
+        }
+
+        h1 {
+            margin: 0;
+
+            font-size: clamp(34px, 5vw, 70px);
+            font-weight: 400;
+            letter-spacing: -0.04em;
+        }
+
+        .volume-number {
+            font-size: clamp(34px, 5vw, 70px);
+            font-weight: 400;
+            letter-spacing: -0.04em;
+        }
+
+        .label {
+            margin-top: 10px;
+
+            font-size: 13px;
+
+            opacity: 0.45;
+        }
+
+        .slider-area {
+            position: relative;
+
+            width: 100%;
+            height: 160px;
+
+            display: flex;
+            align-items: center;
+        }
+
+        .track {
+            position: absolute;
+
+            left: 0;
+            right: 0;
+
+            height: 2px;
+
+            background: #111;
+        }
+
+        .progress {
+            position: absolute;
+
+            left: 0;
+
+            height: 8px;
+
+            width: 50%;
+
+            background: #111;
+
+            pointer-events: none;
+        }
+
+        .knob {
+            position: absolute;
+
+            width: 44px;
+            height: 44px;
+
+            border-radius: 50%;
+
+            background: #111;
+
+            transform: translate(-50%, -50%);
+
+            top: 50%;
+            left: 50%;
+
+            cursor: grab;
+
+            user-select: none;
+
+            transition:
+                width 0.15s ease,
+                height 0.15s ease;
+        }
+
+        .knob:hover {
+            width: 38px;
+            height: 38px;
+        }
+
+        .knob.dragging {
+            cursor: grabbing;
+
+            width: 50px;
+            height: 50px;
+        }
+
+        .numbers {
+            display: flex;
+            justify-content: space-between;
+
+            margin-top: -45px;
+
+            font-size: 12px;
+
+            opacity: 0.45;
+        }
+
+        .status {
+            margin-top: 55px;
+
+            height: 20px;
+
+            font-size: 13px;
+
+            opacity: 0.55;
+        }
+
+        
+
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="top">
+
+        <div>
+
+            <h1>
+                Volume
+            </h1>
+
+            <div class="label">
+                Please adjust carefully.
+            </div>
+
+        </div>
+
+        <div class="volume-number">
+            <span id="value">50</span>%
+        </div>
+
+    </div>
+
+
+    <div
+        class="slider-area"
+        id="sliderArea"
+    >
+
+        <div class="track"></div>
+
+        <div
+            class="progress"
+            id="progress"
+        ></div>
+
+        <div
+            class="knob"
+            id="knob"
+        ></div>
+
+    </div>
+
+
+    <div class="numbers">
+        <span>0</span>
+        <span>25</span>
+        <span>50</span>
+        <span>75</span>
+        <span>100</span>
+    </div>
+
+
+    <div
+        class="status"
+        id="status"
+    >
+        Try to catch the slider.
+    </div>
+
+</div>
+
+
+
+
+
+<script>
+
+const sliderArea =
+    document.getElementById("sliderArea");
+
+const knob =
+    document.getElementById("knob");
+
+const progress =
+    document.getElementById("progress");
+
+const valueText =
+    document.getElementById("value");
+
+const status =
+    document.getElementById("status");
+
+
+// ------------------------------------
+// STATE
+// ------------------------------------
+
+let volume = 50;
+
+let visualPosition = 50;
+
+let targetPosition = 50;
+
+let mouseX = 0;
+
+let mouseY = 0;
+
+let isDragging = false;
+
+let reversed = false;
+
+let lastTime = 0;
+
+
+// ------------------------------------
+// RANDOM
+// ------------------------------------
+
+function random(min, max) {
+
+    return (
+        Math.random() *
+        (max - min)
+        +
+        min
+    );
+
+}
+
+
+// ------------------------------------
+// CLAMP
+// ------------------------------------
+
+function clamp(value, min, max) {
+
+    return Math.max(
+        min,
+        Math.min(
+            max,
+            value
+        )
+    );
+
+}
+
+
+// ------------------------------------
+// MOUSE
+// ------------------------------------
+
+window.addEventListener(
+    "pointermove",
+    event => {
+
+        mouseX =
+            event.clientX;
+
+        mouseY =
+            event.clientY;
+
+
+        if (isDragging) {
+
+            updateDrag(
+                event.clientX
+            );
+
+        }
+
+    }
+);
+
+
+// ------------------------------------
+// START DRAG
+// ------------------------------------
+
+knob.addEventListener(
+    "pointerdown",
+    event => {
+
+        isDragging =
+            true;
+
+        knob.classList.add(
+            "dragging"
+        );
+
+        knob.setPointerCapture(
+            event.pointerId
+        );
+
+        status.textContent =
+            "Okay... don't let go.";
+
+    }
+);
+
+
+// ------------------------------------
+// END DRAG
+// ------------------------------------
+
+knob.addEventListener(
+    "pointerup",
+    event => {
+
+        isDragging =
+            false;
+
+        knob.classList.remove(
+            "dragging"
+        );
+
+
+        // slider slips after release
+
+        const slip =
+            random(
+                -8,
+                8
+            );
+
+
+        targetPosition =
+            clamp(
+                targetPosition + slip,
+                0,
+                100
+            );
+
+
+        volume =
+            Math.round(
+                targetPosition
+            );
+
+
+        status.textContent =
+            "It moved a little. Sorry.";
+
+
+        if (
+            knob.hasPointerCapture(
+                event.pointerId
+            )
+        ) {
+
+            knob.releasePointerCapture(
+                event.pointerId
+            );
+
+        }
+
+    }
+);
+
+
+// ------------------------------------
+// DRAG LOGIC
+// ------------------------------------
+
+function updateDrag(pointerX) {
+
+    const rect =
+        sliderArea.getBoundingClientRect();
+
+
+    let percent =
+        (
+            pointerX -
+            rect.left
+        )
+        /
+        rect.width;
+
+
+    percent =
+        clamp(
+            percent,
+            0,
+            1
+        );
+
+
+    // sometimes slider direction is reversed
+
+    if (reversed) {
+
+        percent =
+            1 - percent;
+
+    }
+
+
+    targetPosition =
+        percent * 100;
+
+
+    volume =
+        Math.round(
+            targetPosition
+        );
+
+}
+
+
+// ------------------------------------
+// RANDOMLY REVERSE THE SLIDER
+// ------------------------------------
+
+setInterval(
+    () => {
+
+        reversed =
+            !reversed;
+
+
+        if (reversed) {
+
+            status.textContent =
+                "Controls reversed.";
+
+        }
+
+        else {
+
+            status.textContent =
+                "Controls normal again.";
+
+        }
+
+    },
+    7000
+);
+
+
+// ------------------------------------
+// ANIMATION
+// ------------------------------------
+
+function animate(time) {
+
+    const seconds =
+        time / 1000;
+
+
+    const rect =
+        sliderArea.getBoundingClientRect();
+
+
+    // ------------------------------------
+    // KNOB SCREEN POSITION
+    // ------------------------------------
+
+    const knobScreenX =
+        rect.left +
+        (
+            visualPosition /
+            100
+        )
+        *
+        rect.width;
+
+
+    const knobScreenY =
+        rect.top +
+        rect.height /
+        2;
+
+
+    // ------------------------------------
+    // DISTANCE FROM MOUSE
+    // ------------------------------------
+
+    const dx =
+        mouseX -
+        knobScreenX;
+
+
+    const dy =
+        mouseY -
+        knobScreenY;
+
+
+    const distance =
+        Math.sqrt(
+            dx * dx +
+            dy * dy
+        );
+
+
+    // ------------------------------------
+    // RUN AWAY FROM CURSOR
+    // ------------------------------------
+
+    if (
+        !isDragging &&
+        distance < 130
+    ) {
+
+        const direction =
+            dx > 0
+            ? -1
+            : 1;
+
+
+        targetPosition +=
+            direction *
+            0.85;
+
+
+        targetPosition =
+            clamp(
+                targetPosition,
+                2,
+                98
+            );
+
+
+        status.textContent =
+            "Stop chasing me.";
+
+    }
+
+
+    // ------------------------------------
+    // RANDOM / SIN MOVEMENT
+    // ------------------------------------
+
+    if (!isDragging) {
+
+        const wobble =
+            Math.sin(
+                seconds * 2.1
+                +
+                targetPosition
+            )
+            *
+            0.025;
+
+
+        targetPosition +=
+            wobble;
+
+    }
+
+
+    // ------------------------------------
+    // SMOOTH MOVEMENT
+    // ------------------------------------
+
+    visualPosition +=
+        (
+            targetPosition -
+            visualPosition
+        )
+        *
+        0.12;
+
+
+    volume =
+        Math.round(
+            visualPosition
+        );
+
+
+    // ------------------------------------
+    // DRAW
+    // ------------------------------------
+
+    knob.style.left =
+        visualPosition + "%";
+
+
+    progress.style.width =
+        visualPosition + "%";
+
+
+    valueText.textContent =
+        volume;
+
+
+    lastTime =
+        time;
+
+
+    requestAnimationFrame(
+        animate
+    );
+
+}
+
+
+// ------------------------------------
+// START
+// ------------------------------------
+
+requestAnimationFrame(
+    animate
+);
+
+</script>
+
+</body>
+</html>
