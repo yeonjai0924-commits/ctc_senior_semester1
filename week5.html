@@ -33,68 +33,46 @@
             overflow: hidden;
         }
 
-
-        
         .slider-area {
             position: absolute;
-
             left: 10%;
             width: 80%;
-
             top: 65%;
             height: 120px;
-
             z-index: 5;
         }
 
         .track {
             position: absolute;
-
             left: 0;
             right: 0;
-
             top: 50%;
-
             height: 3px;
-
             background: black;
-
             transform: translateY(-50%);
         }
 
         .progress {
             position: absolute;
-
             left: 0;
             top: 50%;
-
             width: 86%;
             height: 8px;
-
             background: black;
-
             transform: translateY(-50%);
-
             pointer-events: none;
         }
 
         .knob {
             position: absolute;
-
             top: 50%;
             left: 86%;
-
             width: 48px;
             height: 48px;
-
             background: black;
-
             border-radius: 50%;
-
             transform: translate(-50%, -50%);
-
             cursor: grab;
-
             z-index: 7;
         }
 
@@ -102,38 +80,23 @@
             cursor: grabbing;
         }
 
-
-     
-
         .scale {
             position: absolute;
-
             left: 10%;
             width: 80%;
-
             top: calc(65% + 78px);
-
             display: flex;
             justify-content: space-between;
-
             color: #999;
-
             font-size: 16px;
-
             z-index: 4;
         }
 
-
-       
         .fake-layer {
             position: absolute;
-
             cursor: move;
-
             user-select: none;
-
             border: 2px solid transparent;
-
             touch-action: none;
         }
 
@@ -141,23 +104,16 @@
             border-color: #3478ff;
         }
 
-
-       
-        
-
         #titleLayer {
             left: 2%;
             top: 8%;
-
             width: 96%;
             height: 67%;
-
             z-index: 30;
         }
 
         .title-text {
             position: absolute;
-
             left: 1%;
             top: 0;
 
@@ -168,23 +124,20 @@
             );
 
             font-weight: 400;
-
             letter-spacing: -0.065em;
             line-height: 0.9;
         }
 
-
-       
         #percentageLayer {
             left: 7%;
-            top: 10%; width: 89%; height: 68%;
-
+            top: 10%;
+            width: 89%;
+            height: 68%;
             z-index: 20;
         }
 
         .percentage-text {
             position: absolute;
-
             right: 1%;
             top: 0;
 
@@ -195,26 +148,16 @@
             );
 
             font-weight: 400;
-
             letter-spacing: -0.05em;
-
             white-space: nowrap;
         }
 
-
-       
-       
-
         .handle {
             position: absolute;
-
             width: 10px;
             height: 10px;
-
             background: white;
-
             border: 2px solid #3478ff;
-
             display: none;
         }
 
@@ -244,40 +187,29 @@
 
         .anchor {
             position: absolute;
-
             left: 50%;
             top: 50%;
-
             width: 7px;
             height: 7px;
-
             background: #3478ff;
-
             transform: translate(-50%, -50%);
-
             display: none;
         }
 
         .selected .anchor {
             display: block;
         }
-
     </style>
-
 </head>
-
 
 <body>
 
 <div class="stage" id="stage">
 
-
-
     <div
         class="slider-area"
         id="sliderArea"
     >
-
         <div class="track"></div>
 
         <div
@@ -289,10 +221,7 @@
             class="knob"
             id="knob"
         ></div>
-
     </div>
-
-
 
     <div class="scale">
         <span>0</span>
@@ -302,14 +231,10 @@
         <span>100</span>
     </div>
 
-
-
-
     <div
         class="fake-layer"
         id="percentageLayer"
     >
-
         <div
             class="percentage-text"
             id="percentageText"
@@ -323,18 +248,12 @@
         <div class="handle br"></div>
 
         <div class="anchor"></div>
-
     </div>
-
-
-
-    
 
     <div
         class="fake-layer"
         id="titleLayer"
     >
-
         <div class="title-text">
             Volume Slider
         </div>
@@ -345,16 +264,11 @@
         <div class="handle br"></div>
 
         <div class="anchor"></div>
-
     </div>
-
 
 </div>
 
-
-
 <script>
-
 
 const sliderArea =
     document.getElementById("sliderArea");
@@ -371,9 +285,6 @@ const percentageText =
 const stage =
     document.getElementById("stage");
 
-
-
-
 let volume = 86;
 
 let sliderDragging = false;
@@ -382,7 +293,72 @@ let sliderStartX = 0;
 
 let startVolume = 86;
 
+let audioContext;
 
+let oscillator;
+
+let gainNode;
+
+let audioStarted = false;
+
+
+function startAudio() {
+
+    if (audioStarted) {
+        return;
+    }
+
+    audioContext =
+        new (
+            window.AudioContext ||
+            window.webkitAudioContext
+        )();
+
+    oscillator =
+        audioContext.createOscillator();
+
+    gainNode =
+        audioContext.createGain();
+
+    oscillator.type =
+        "sine";
+
+    oscillator.frequency.value =
+        220;
+
+    gainNode.gain.value =
+        (volume / 100) * 0.18;
+
+    oscillator.connect(
+        gainNode
+    );
+
+    gainNode.connect(
+        audioContext.destination
+    );
+
+    oscillator.start();
+
+    audioStarted =
+        true;
+}
+
+
+function updateAudioVolume() {
+
+    if (!audioStarted) {
+        return;
+    }
+
+    const targetVolume =
+        (volume / 100) * 0.18;
+
+    gainNode.gain.setTargetAtTime(
+        targetVolume,
+        audioContext.currentTime,
+        0.02
+    );
+}
 
 
 function updateVolumeDisplay() {
@@ -397,8 +373,6 @@ function updateVolumeDisplay() {
 }
 
 
-
-
 function drawSlider() {
 
     knob.style.left =
@@ -408,9 +382,9 @@ function drawSlider() {
         volume + "%";
 
     updateVolumeDisplay();
+
+    updateAudioVolume();
 }
-
-
 
 
 knob.addEventListener(
@@ -418,7 +392,17 @@ knob.addEventListener(
 
     event => {
 
-        sliderDragging = true;
+        startAudio();
+
+        if (
+            audioContext &&
+            audioContext.state === "suspended"
+        ) {
+            audioContext.resume();
+        }
+
+        sliderDragging =
+            true;
 
         sliderStartX =
             event.clientX;
@@ -435,7 +419,6 @@ knob.addEventListener(
 );
 
 
-
 knob.addEventListener(
     "pointermove",
 
@@ -448,11 +431,9 @@ knob.addEventListener(
         const rect =
             sliderArea.getBoundingClientRect();
 
-
         const pixelDifference =
             event.clientX -
             sliderStartX;
-
 
         const normalPercentDifference =
             (
@@ -460,23 +441,18 @@ knob.addEventListener(
                 rect.width
             ) * 100;
 
-
-
         const sensitivity =
             0.35;
-
 
         const slowDifference =
             normalPercentDifference *
             sensitivity;
-
 
         volume =
             Math.round(
                 startVolume +
                 slowDifference
             );
-
 
         volume =
             Math.max(
@@ -487,12 +463,9 @@ knob.addEventListener(
                 )
             );
 
-
         drawSlider();
     }
 );
-
-
 
 
 knob.addEventListener(
@@ -503,13 +476,11 @@ knob.addEventListener(
         sliderDragging =
             false;
 
-
         if (
             knob.hasPointerCapture(
                 event.pointerId
             )
         ) {
-
             knob.releasePointerCapture(
                 event.pointerId
             );
@@ -518,6 +489,15 @@ knob.addEventListener(
 );
 
 
+knob.addEventListener(
+    "pointercancel",
+
+    () => {
+
+        sliderDragging =
+            false;
+    }
+);
 
 
 sliderArea.addEventListener(
@@ -525,12 +505,9 @@ sliderArea.addEventListener(
 
     event => {
 
-        
-
         event.stopPropagation();
     }
 );
-
 
 
 const layers =
@@ -538,12 +515,14 @@ const layers =
         ".fake-layer"
     );
 
+let activeLayer =
+    null;
 
-let activeLayer = null;
+let dragOffsetX =
+    0;
 
-let dragOffsetX = 0;
-let dragOffsetY = 0;
-
+let dragOffsetY =
+    0;
 
 
 layers.forEach(
@@ -563,36 +542,30 @@ layers.forEach(
                     }
                 );
 
-
                 layer.classList.add(
                     "selected"
                 );
 
-
                 activeLayer =
                     layer;
 
-
                 const rect =
                     layer.getBoundingClientRect();
-
 
                 dragOffsetX =
                     event.clientX -
                     rect.left;
 
-
                 dragOffsetY =
                     event.clientY -
                     rect.top;
-
 
                 layer.setPointerCapture(
                     event.pointerId
                 );
 
-
                 event.preventDefault();
+
                 event.stopPropagation();
             }
         );
@@ -609,26 +582,21 @@ layers.forEach(
                     return;
                 }
 
-
                 const stageRect =
                     stage.getBoundingClientRect();
-
 
                 const x =
                     event.clientX -
                     stageRect.left -
                     dragOffsetX;
 
-
                 const y =
                     event.clientY -
                     stageRect.top -
                     dragOffsetY;
 
-
                 layer.style.left =
                     x + "px";
-
 
                 layer.style.top =
                     y + "px";
@@ -644,13 +612,11 @@ layers.forEach(
                 activeLayer =
                     null;
 
-
                 if (
                     layer.hasPointerCapture(
                         event.pointerId
                     )
                 ) {
-
                     layer.releasePointerCapture(
                         event.pointerId
                     );
@@ -658,14 +624,21 @@ layers.forEach(
             }
         );
 
+
+        layer.addEventListener(
+            "pointercancel",
+
+            () => {
+
+                activeLayer =
+                    null;
+            }
+        );
     }
 );
 
 
-
-
 drawSlider();
-
 
 </script>
 
