@@ -1,1 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Worst Volume Slider</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            background: #f5f4ef;
+            font-family: Arial, Helvetica, sans-serif;
+            overflow: hidden;
+            color: black;
+        }
+
+        .stage {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+
+        
+        .slider-area {
+            position: absolute;
+
+            left: 10%;
+            width: 80%;
+
+            top: 65%;
+            height: 120px;
+
+            z-index: 5;
+        }
+
+        .track {
+            position: absolute;
+
+            left: 0;
+            right: 0;
+
+            top: 50%;
+
+            height: 3px;
+
+            background: black;
+
+            transform: translateY(-50%);
+        }
+
+        .progress {
+            position: absolute;
+
+            left: 0;
+            top: 50%;
+
+            width: 86%;
+            height: 8px;
+
+            background: black;
+
+            transform: translateY(-50%);
+
+            pointer-events: none;
+        }
+
+        .knob {
+            position: absolute;
+
+            top: 50%;
+            left: 86%;
+
+            width: 48px;
+            height: 48px;
+
+            background: black;
+
+            border-radius: 50%;
+
+            transform: translate(-50%, -50%);
+
+            cursor: grab;
+
+            z-index: 7;
+        }
+
+        .knob:active {
+            cursor: grabbing;
+        }
+
+
+     
+
+        .scale {
+            position: absolute;
+
+            left: 10%;
+            width: 80%;
+
+            top: calc(65% + 78px);
+
+            display: flex;
+            justify-content: space-between;
+
+            color: #999;
+
+            font-size: 16px;
+
+            z-index: 4;
+        }
+
+
+       
+        .fake-layer {
+            position: absolute;
+
+            cursor: move;
+
+            user-select: none;
+
+            border: 2px solid transparent;
+
+            touch-action: none;
+        }
+
+        .fake-layer.selected {
+            border-color: #3478ff;
+        }
+
+
+       
+        
+
+        #titleLayer {
+            left: 2%;
+            top: 8%;
+
+            width: 96%;
+            height: 67%;
+
+            z-index: 30;
+        }
+
+        .title-text {
+            position: absolute;
+
+            left: 1%;
+            top: 0;
+
+            font-size: clamp(
+                72px,
+                9vw,
+                145px
+            );
+
+            font-weight: 400;
+
+            letter-spacing: -0.065em;
+            line-height: 0.9;
+        }
+
+
+       
+        #percentageLayer {
+            left: 7%;
+            top: 10%; width: 89%; height: 68%;
+
+            z-index: 20;
+        }
+
+        .percentage-text {
+            position: absolute;
+
+            right: 1%;
+            top: 0;
+
+            font-size: clamp(
+                64px,
+                8vw,
+                125px
+            );
+
+            font-weight: 400;
+
+            letter-spacing: -0.05em;
+
+            white-space: nowrap;
+        }
+
+
+       
+       
+
+        .handle {
+            position: absolute;
+
+            width: 10px;
+            height: 10px;
+
+            background: white;
+
+            border: 2px solid #3478ff;
+
+            display: none;
+        }
+
+        .selected .handle {
+            display: block;
+        }
+
+        .handle.tl {
+            left: -6px;
+            top: -6px;
+        }
+
+        .handle.tr {
+            right: -6px;
+            top: -6px;
+        }
+
+        .handle.bl {
+            left: -6px;
+            bottom: -6px;
+        }
+
+        .handle.br {
+            right: -6px;
+            bottom: -6px;
+        }
+
+        .anchor {
+            position: absolute;
+
+            left: 50%;
+            top: 50%;
+
+            width: 7px;
+            height: 7px;
+
+            background: #3478ff;
+
+            transform: translate(-50%, -50%);
+
+            display: none;
+        }
+
+        .selected .anchor {
+            display: block;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="stage" id="stage">
+
+
+
+    <div
+        class="slider-area"
+        id="sliderArea"
+    >
+
+        <div class="track"></div>
+
+        <div
+            class="progress"
+            id="progress"
+        ></div>
+
+        <div
+            class="knob"
+            id="knob"
+        ></div>
+
+    </div>
+
+
+
+    <div class="scale">
+        <span>0</span>
+        <span>25</span>
+        <span>50</span>
+        <span>75</span>
+        <span>100</span>
+    </div>
+
+
+
+
+    <div
+        class="fake-layer"
+        id="percentageLayer"
+    >
+
+        <div
+            class="percentage-text"
+            id="percentageText"
+        >
+            100% − 14%
+        </div>
+
+        <div class="handle tl"></div>
+        <div class="handle tr"></div>
+        <div class="handle bl"></div>
+        <div class="handle br"></div>
+
+        <div class="anchor"></div>
+
+    </div>
+
+
+
+    
+
+    <div
+        class="fake-layer"
+        id="titleLayer"
+    >
+
+        <div class="title-text">
+            Volume Slider
+        </div>
+
+        <div class="handle tl"></div>
+        <div class="handle tr"></div>
+        <div class="handle bl"></div>
+        <div class="handle br"></div>
+
+        <div class="anchor"></div>
+
+    </div>
+
+
+</div>
+
+
+
+<script>
+
+
+const sliderArea =
+    document.getElementById("sliderArea");
+
+const knob =
+    document.getElementById("knob");
+
+const progress =
+    document.getElementById("progress");
+
+const percentageText =
+    document.getElementById("percentageText");
+
+const stage =
+    document.getElementById("stage");
+
+
+
+
+let volume = 86;
+
+let sliderDragging = false;
+
+let sliderStartX = 0;
+
+let startVolume = 86;
+
+
+
+
+function updateVolumeDisplay() {
+
+    const missing =
+        100 - volume;
+
+    percentageText.textContent =
+        "100% − " +
+        missing +
+        "%";
+}
+
+
+
+
+function drawSlider() {
+
+    knob.style.left =
+        volume + "%";
+
+    progress.style.width =
+        volume + "%";
+
+    updateVolumeDisplay();
+}
+
+
+
+
+knob.addEventListener(
+    "pointerdown",
+
+    event => {
+
+        sliderDragging = true;
+
+        sliderStartX =
+            event.clientX;
+
+        startVolume =
+            volume;
+
+        knob.setPointerCapture(
+            event.pointerId
+        );
+
+        event.stopPropagation();
+    }
+);
+
+
+
+knob.addEventListener(
+    "pointermove",
+
+    event => {
+
+        if (!sliderDragging) {
+            return;
+        }
+
+        const rect =
+            sliderArea.getBoundingClientRect();
+
+
+        const pixelDifference =
+            event.clientX -
+            sliderStartX;
+
+
+        const normalPercentDifference =
+            (
+                pixelDifference /
+                rect.width
+            ) * 100;
+
+
+
+        const sensitivity =
+            0.35;
+
+
+        const slowDifference =
+            normalPercentDifference *
+            sensitivity;
+
+
+        volume =
+            Math.round(
+                startVolume +
+                slowDifference
+            );
+
+
+        volume =
+            Math.max(
+                0,
+                Math.min(
+                    100,
+                    volume
+                )
+            );
+
+
+        drawSlider();
+    }
+);
+
+
+
+
+knob.addEventListener(
+    "pointerup",
+
+    event => {
+
+        sliderDragging =
+            false;
+
+
+        if (
+            knob.hasPointerCapture(
+                event.pointerId
+            )
+        ) {
+
+            knob.releasePointerCapture(
+                event.pointerId
+            );
+        }
+    }
+);
+
+
+
+
+sliderArea.addEventListener(
+    "pointerdown",
+
+    event => {
+
+        
+
+        event.stopPropagation();
+    }
+);
+
+
+
+const layers =
+    document.querySelectorAll(
+        ".fake-layer"
+    );
+
+
+let activeLayer = null;
+
+let dragOffsetX = 0;
+let dragOffsetY = 0;
+
+
+
+layers.forEach(
+    layer => {
+
+        layer.addEventListener(
+            "pointerdown",
+
+            event => {
+
+                layers.forEach(
+                    item => {
+
+                        item.classList.remove(
+                            "selected"
+                        );
+                    }
+                );
+
+
+                layer.classList.add(
+                    "selected"
+                );
+
+
+                activeLayer =
+                    layer;
+
+
+                const rect =
+                    layer.getBoundingClientRect();
+
+
+                dragOffsetX =
+                    event.clientX -
+                    rect.left;
+
+
+                dragOffsetY =
+                    event.clientY -
+                    rect.top;
+
+
+                layer.setPointerCapture(
+                    event.pointerId
+                );
+
+
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        );
+
+
+        layer.addEventListener(
+            "pointermove",
+
+            event => {
+
+                if (
+                    activeLayer !== layer
+                ) {
+                    return;
+                }
+
+
+                const stageRect =
+                    stage.getBoundingClientRect();
+
+
+                const x =
+                    event.clientX -
+                    stageRect.left -
+                    dragOffsetX;
+
+
+                const y =
+                    event.clientY -
+                    stageRect.top -
+                    dragOffsetY;
+
+
+                layer.style.left =
+                    x + "px";
+
+
+                layer.style.top =
+                    y + "px";
+            }
+        );
+
+
+        layer.addEventListener(
+            "pointerup",
+
+            event => {
+
+                activeLayer =
+                    null;
+
+
+                if (
+                    layer.hasPointerCapture(
+                        event.pointerId
+                    )
+                ) {
+
+                    layer.releasePointerCapture(
+                        event.pointerId
+                    );
+                }
+            }
+        );
+
+    }
+);
+
+
+
+
+drawSlider();
+
+
+</script>
+
+</body>
+
+</html>
