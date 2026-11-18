@@ -1,48 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Week 9 - Before Mom Gets In</title>
-<style>
-* { box-sizing: border-box; }
-body { font-family: Arial, sans-serif; background: white; color: black; padding: 30px; margin: 8px; line-height: 1.6; }
-main { max-width: 760px; }
-h1 { font-size: 32px; line-height: 1.2; margin: 20px 0; }
-h2 { font-size: 21px; margin-top: 32px; }
-a { color: #111; }
-.download { display: inline-block; max-width: 100%; padding: 15px 20px; background: #eee; border: 1px solid #999; color: black; text-decoration: none; font-size: 18px; overflow-wrap: anywhere; }
-.download:hover { background: #ddd; }
-a:focus-visible { outline: 3px solid #245fc3; outline-offset: 4px; }
-.note { color: #555; font-size: 14px; }
-li { margin: 7px 0; }
-@media (max-width: 600px) { body { padding: 16px; } h1 { font-size: 28px; } }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>My Coding Projects</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: white;
+            color: black;
+            padding: 30px;
+        }
+
+        h1 {
+            font-size: 32px;
+        }
+
+        p {
+            font-size: 16px;
+        }
+
+        .week-list {
+            margin-top: 40px;
+        }
+
+        .week {
+            display: block;
+            width: 300px;
+            margin-bottom: 15px;
+            padding: 15px;
+
+            background-color: #eeeeee;
+            border: 1px solid #999999;
+
+            color: black;
+            text-decoration: none;
+            font-size: 18px;
+        }
+
+        .week:hover {
+            background-color: #dddddd;
+        }
+    </style>
 </head>
-<body><main>
-<a href="../index.html">&larr; Back to projects</a>
-<p>Week 9 / GameMaker</p>
-<h1>Before Mom Gets In</h1>
-<p>A first-person cleaning game. Mom is waiting outside the bedroom door, and you have 100 seconds to finish.</p>
-<p>Clear eight objects from the desk to uncover a key. Use it to unlock the adjoining closet, then click the gold hanger to start a rhythm game. Press Space as the shirts reach the line to hang ten pieces of clothing.</p>
-<p>Finish before the timer runs out to win. Otherwise, Mom breaks through the door.</p>
-<a class="download" href="game_yeonjaisong.yyz" download="game_yeonjaisong.yyz">Download GameMaker project (.yyz)</a>
-<p class="note">5.5 MB &middot; Project download, not a browser-playable game.</p>
-<h2>How to run</h2>
-<ol>
-<li>Download <strong>game_yeonjaisong.yyz</strong>.</li>
-<li>Open <strong>GameMaker LTS 2026</strong> and select <strong>Import</strong>.</li>
-<li>Select the downloaded file and choose a new folder for the project.</li>
-<li>Select the appropriate target for your computer and click <strong>Run</strong>.</li>
-</ol>
-<h2>Controls</h2>
-<ul>
-<li><strong>WASD / arrow keys:</strong> move</li>
-<li><strong>Mouse:</strong> look around</li>
-<li><strong>Click / E:</strong> pick up, place or interact</li>
-<li><strong>Q:</strong> put a held item back</li>
-<li><strong>Space:</strong> hang clothes in the rhythm game</li>
-<li><strong>Esc:</strong> pause</li>
-</ul>
-</main></body>
+
+<body>
+
+    <h1>My Coding Projects</h1>
+
+    <p>
+        Weekly coding experiments
+    </p>
+
+    <div class="week-list">
+
+        <a class="week" href="week1.html">
+            Week 1 - Fragment Shader
+        </a>
+
+        <a class="week" href="week2.html">
+            Week 2 - Noise and Mouse
+        </a>
+
+        <a class="week" href="week3.html">
+            Week 3 - Webcam Pixels
+        </a>
+
+        <a class="week" href="week5.html">
+            Week 5 - Worst Volume Slider
+        </a>
+
+        <a class="week" href="week9/index.html">
+            Week 9 - Before Mom Gets In
+        </a>
+
+    </div>
+
+</body>
+
 </html>
